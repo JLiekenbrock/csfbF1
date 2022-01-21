@@ -1,5 +1,5 @@
 #1
-print("#1a: wc Shakespeare.txt: 124456 bytes, 901325 words, 5458199 lines")
+print("#1a: wc Shakespeare.txt: 124456 bytes, 901325 lines, 5458199 words")
 print('#1b: grep -c -i "by William Shakespeare" Shakespeare.txt: 38')
 
 #2
@@ -18,6 +18,7 @@ The execution involes 4 processes.
 print("#4")
 
 from re import X
+from turtle import xcor
 from pandas import isnull
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import monotonically_increasing_id, col, lag, when, array
@@ -27,7 +28,6 @@ from pyspark.sql.functions import row_number
 spark = SparkSession \
     .builder \
     .appName("Python Spark SQL basic example") \
-    .config("spark.some.config.option", "some-value") \
     .getOrCreate()
 
 sc = spark.sparkContext
@@ -73,8 +73,6 @@ df1 = df1.withColumn("title", when(col("Lag")=="", lag(col("value"),3).over(
     Window.orderBy('rowId'))).otherwise(col("Lag")))
 df1.show()
 
-#df1=df1.withColumn("title", when(col("Lag2").isnotnull)array("Lag", "Lag2"))
-
 df1 = df1.withColumn("title", functions.last("title", ignorenulls=True).over(Window.orderBy("rowId")))
 
 df1.show()
@@ -83,10 +81,22 @@ df1.filter(col("title")=="").show()
 
 df1.groupBy("title").count().show()
 
+
+df1.rdd.getNumPartitions()
+df1=df1.drop("Lag","play","rowId").dropna()
+
+df1.rdd.getNumPartitions()
+
+df1=df1.repartition("title")
+df1.rdd.getNumPartitions()
+df1.show()
+
+sc.parallelize(df1.collect()).map(lambda x : len(x)).reduce(add)
+
 print('''
 #7
 Stopwords are common words that add no meaning to a text.
-Therefore they are often removend during text mining.
+Therefore they are often removend during text mining.lines
 A collection of stopword-lists is avaible in this repo:
 https://github.com/stopwords-iso/stopwords-en/tree/master/raw
 
