@@ -15,24 +15,13 @@ The regex sed 's/ -- /\n/g' is used to replace all double dashes with a newline.
 The execution involes 4 processes.
 """)
 
-#3
-print("""
-    0: val textFile = sc.wholeTextFiles("my/path/*.csv", 8)
-    a: df.filter($line > 245).show(false)
-    b: d.filter(col("alphanumeric")
-        .rlike("<<.+>>")
-        ).show(false)
-    c:
-    d:
-    e:
-
-"""
-)
-#5
+print("#4")
 
 from re import X
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import monotonically_increasing_id, col, lag, when
+from pyspark.sql.functions import monotonically_increasing_id, col, lag, when, lit
+from pyspark.sql.window import Window
+from pyspark.sql.functions import row_number
 
 spark = SparkSession \
     .builder \
@@ -65,9 +54,30 @@ copyright = [line for line in copyright.split("\n")]
 
 df1.filter(col("value").isin(copyright)).show()
 
-df1=df1.filter(~col("value").isin(copyright)).show()
+df1=df1.filter(~col("value").isin(copyright))
+
+df1.show()
 
 print("#4 c\n")
+from pyspark.sql.functions import row_number
+from pyspark.sql import functions, Window
 
-df1.withColumn("play", col("value").contains("by William Shakespeare") ) 
+df1 = df1.withColumn("play", col("value").contains("by William Shakespeare") ) 
+df1.show()
 
+df1 = df1.withColumn("Lag", when(col("play"), lag(col("value"),2).over(
+    Window.orderBy('rowId'))))
+df1.show()
+
+df1 = df1.withColumn("value2", functions.last("Lag", ignorenulls=True).over(Window.orderBy("rowId")))
+
+df1.groupBy("value2").count().show()
+
+print('''
+#7
+Stopwords are common words that add no meaning to a text.
+Therefore they are often removend during text mining.
+A collection of stopword-lists is avaible in this repo:
+https://github.com/stopwords-iso/stopwords-en/tree/master/raw
+
+''')
