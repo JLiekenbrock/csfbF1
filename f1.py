@@ -18,8 +18,9 @@ The execution involes 4 processes.
 print("#4")
 
 from re import X
+from pandas import isnull
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import monotonically_increasing_id, col, lag, when, lit
+from pyspark.sql.functions import monotonically_increasing_id, col, lag, when, array
 from pyspark.sql.window import Window
 from pyspark.sql.functions import row_number
 
@@ -63,15 +64,24 @@ from pyspark.sql.functions import row_number
 from pyspark.sql import functions, Window
 
 df1 = df1.withColumn("play", col("value").contains("by William Shakespeare") ) 
-df1.show()
 
 df1 = df1.withColumn("Lag", when(col("play"), lag(col("value"),2).over(
     Window.orderBy('rowId'))))
 df1.show()
 
-df1 = df1.withColumn("value2", functions.last("Lag", ignorenulls=True).over(Window.orderBy("rowId")))
+df1 = df1.withColumn("title", when(col("Lag")=="", lag(col("value"),3).over(
+    Window.orderBy('rowId'))).otherwise(col("Lag")))
+df1.show()
 
-df1.groupBy("value2").count().show()
+#df1=df1.withColumn("title", when(col("Lag2").isnotnull)array("Lag", "Lag2"))
+
+df1 = df1.withColumn("title", functions.last("title", ignorenulls=True).over(Window.orderBy("rowId")))
+
+df1.show()
+
+df1.filter(col("title")=="").show()
+
+df1.groupBy("title").count().show()
 
 print('''
 #7
