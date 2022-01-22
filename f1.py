@@ -21,7 +21,7 @@ from re import X
 from turtle import xcor
 from pandas import isnull
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import monotonically_increasing_id, col, lag, when, array
+from pyspark.sql.functions import monotonically_increasing_id, col, lag, when, regexp_replace, count_distinct,countDistinct,spark_partition_id
 from pyspark.sql.window import Window
 from pyspark.sql.functions import row_number
 
@@ -62,6 +62,7 @@ df1.show()
 print("#4 c\n")
 from pyspark.sql.functions import row_number
 from pyspark.sql import functions, Window
+from operator import add
 
 df1 = df1.withColumn("play", col("value").contains("by William Shakespeare") ) 
 
@@ -79,17 +80,23 @@ df1.show()
 
 df1.filter(col("title")=="").show()
 
-df1.groupBy("title").count().show()
 
+df1.groupBy("title").count().show()
 
 df1.rdd.getNumPartitions()
 df1=df1.drop("Lag","play","rowId").dropna()
 
 df1.rdd.getNumPartitions()
 
-df1=df1.repartition("title")
+partitions = df1.agg(countDistinct(col("title"))).collect()[0][0]
+
+df1=df1.repartition(partitions,"title")
+
 df1.rdd.getNumPartitions()
-df1.show()
+
+df1.withColumn("partitionId", spark_partition_id()).groupBy("partitionId").count().show()
+
+df1.groupBy("title").count().show()
 
 sc.parallelize(df1.collect()).map(lambda x : len(x)).reduce(add)
 
