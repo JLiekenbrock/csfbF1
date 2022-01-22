@@ -21,7 +21,7 @@ from re import X
 from turtle import xcor
 from pandas import isnull
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import monotonically_increasing_id, col, lag, when, regexp_replace, count_distinct,countDistinct,spark_partition_id,split, explode
+from pyspark.sql.functions import monotonically_increasing_id, col, lag, when, desc,spark_partition_id,split, explode
 from pyspark.sql.window import Window
 from pyspark.sql.functions import row_number
 
@@ -88,13 +88,20 @@ df1=df1.drop("Lag","play","rowId").dropna()
 
 df1.rdd.getNumPartitions()
 
-partitions = df1.agg(countDistinct(col("title"))).collect()[0][0]
+partitions = df1.agg(countDisentencestinct(col("title"))).collect()[0][0]
 
 df1=df1.repartition(partitions,"title")
 
 df1.rdd.getNumPartitions()
 
-df1.withColumn("partitionId", spark_partition_id()).groupBy("partitionId").count().sort("count").show()
+df1=df1.select(df1.title,df1.value,split(df1.value, '\s+').alias('split'))
+
+df1=df1.select(df1.title,df1.value,explode(df1.split).alias('word'))
+df1.show()
+df1=df1.where(df1.word != '')
+df1.show()
+
+df1.withColumn("partitionId", spark_partition_id()).groupBy("partitionId","word").count().sort(desc("count")).show()
 
 def count_in_a_partition(iterator):
   yield sum(1 for _ in iterator)
