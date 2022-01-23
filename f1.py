@@ -131,3 +131,20 @@ stopwords.show()
 df1=df1.join(stopwords, on='word', how='left_anti')
 
 df1.show()
+
+df1.withColumn("title", spark_partition_id()).groupBy("title","word").count().sort(desc("count")).show()
+
+from cltk.stops.words import Stops
+
+stops_obj = Stops(iso_code="enm")
+
+stopwords2=stops_obj.get_stopwords()
+
+stopwords2
+
+df1 = df1.filter(~col("word").isin(stopwords2))
+
+df1.show()
+
+df1.withColumn("title", spark_partition_id()).groupBy("title","word").count().sort(desc("count")).show()
+
