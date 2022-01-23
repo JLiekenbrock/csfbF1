@@ -18,6 +18,7 @@ The execution involes 4 processes.
 print("#4")
 
 from re import X
+from tracemalloc import stop
 from turtle import xcor
 from pandas import isnull
 from pyspark.sql import SparkSession
@@ -112,12 +113,21 @@ def count_in_a_partition(iterator):
 df1.rdd.mapPartitions(count_in_a_partition).collect()
 
 
-
 print('''
 #7
 Stopwords are common words that add no meaning to a text.
 Therefore they are often removend during text mining.lines
 A collection of stopword-lists is avaible in this repo:
-https://github.com/stopwords-iso/stopwords-en/tree/master/raw
-
+https://github.com/stopwords-iso/stopwords-en/tree/master/raw|         13|   I| 1322|
+22/01/23 21:10:34 WARN WindowExec: No Partition Defined for Window operation! Moving all data to a single partition, this can cause serious performance degradation.
 ''')
+
+stopwords = spark.read.text("stopwords-en.txt").withColumnRenamed("value", "word")
+
+df1 = df1.withColumn("word", functions.lower(col("word")))
+
+stopwords.show()
+
+df1=df1.join(stopwords, on='word', how='left_anti')
+
+df1.show()
