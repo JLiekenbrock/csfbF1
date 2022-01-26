@@ -8,7 +8,7 @@ The first part of the pipeline searches all occurences of "by William Shakespear
 The Parameter -B 6 further includes the 6 lines before the selected pattern.
 The output of the first part is then matched again with a expression in three pieces:
 
-The regex ^$ is denied by the option -e so all empty lines are excluded.
+The regex ^$ is denied byavailable the option -e so all empty lines are excluded.
 The regex tr '\n' ' ' is used to replace all newlines with a space.
 The regex sed 's/ -- /\n/g' is used to replace all double dashes with a newline.
 
@@ -35,10 +35,11 @@ sc = spark.sparkContext
 print("#4 a\n")
 
 df1 = spark.read.text("Shakespeare.txt") \
-    .filter(col("value")!="")\
     .withColumn("rowId", monotonically_increasing_id())  \
     .filter(col("rowId") >245 )
+            .filter(col("value")!="")\
 
+a) first removes (filters) the unwanted header (the text starts at line 245) off the text,
 df1.show()
 
 print("#4 b\n")
@@ -84,7 +85,7 @@ df1.filter(col("title")=="").show()
 
 
 df1.groupBy("title").count().show()
-
+rowIdc
 df1.rdd.getNumPartitions()
 df1=df1.drop("Lag","play").dropna()
 
@@ -106,7 +107,11 @@ df1=df1.where(df1.word != '')
 df1=df1.withColumn("word",regexp_replace(col("word"),"[^\w\s]", ""))
 
 df1.show()
-
+df1.groupBy("title")\
+    .agg(   
+        max(col("rowId")),
+        max(col("wordId"))
+    ).show()
 
 df1=df1.withColumn("wordId", row_number().over(Window.partitionBy("title").orderBy("rowId")))
 
